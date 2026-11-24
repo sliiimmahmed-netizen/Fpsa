@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FPSA Doc</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Noto Sans Arabic','Segoe UI',Tahoma,sans-serif;background:#f2f3f7;color:#222}
+#app{max-width:720px;margin:auto;padding:env(safe-area-inset-top) 0 40px}
+.top{background:#2b2f6b;color:#fff;padding:18px 16px;display:flex;align-items:center;gap:10px}
+.top h1{margin:0;font-size:20px;flex:1}
+.top button{background:#fff3;color:#fff;border:0;border-radius:10px;padding:8px 12px;font:inherit}
+h2{font-size:16px;margin:18px 14px 8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px}
+.tpl{border:0;border-radius:14px;color:#fff;padding:18px 8px;font:inherit;font-size:15px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:6px}
+.tpl span{font-size:28px}
+.item{background:#fff;margin:8px 14px;border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;border-inline-start:6px solid}
+.item .m{flex:1}.item small{color:#777}
+.item button{border:0;background:#eee;border-radius:8px;padding:6px 10px;font:inherit}
+.form{padding:10px 14px}
+.form label{display:block;font-weight:700;margin:14px 0 4px;font-size:14px}
+.form input,.form textarea{width:100%;border:1px solid #ccc;border-radius:10px;padding:10px;font:inherit;background:#fff}
+.form textarea{min-height:90px;resize:vertical}
+.bar2{position:sticky;bottom:0;background:#fff;display:flex;gap:8px;padding:10px 14px;box-shadow:0 -2px 8px #0002}
+.bar2 button{flex:1;border:0;border-radius:10px;padding:12px 4px;color:#fff;font:inherit;font-weight:700}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:20px;display:none}
+.empty{color:#888;text-align:center;padding:14px}
+/* A4 document */
+#stage{position:fixed;left:-10000px;top:0}
+.page{width:794px;min-height:1123px;background:#fff;color:#000;padding-bottom:30px;font-family:'Noto Sans Arabic','Segoe UI',Tahoma,sans-serif}
+.bn{display:flex;align-items:center;gap:20px;padding:22px 40px;height:130px}
+.bt{flex:1}.bt small{display:block;font-size:19px}.bt b{font-size:42px;line-height:1.2}
+.lg{font:900 34px Arial;color:#e00;border:3px solid #1020e0;border-radius:14px;padding:8px 10px;direction:ltr}
+.bi{font-size:64px}.bar{height:10px;margin-bottom:26px}
+.pad{padding:0 40px}
+table{width:100%;border-collapse:collapse;margin-bottom:12px}
+td{border:1px solid #000;padding:7px 10px;font-size:16px;height:36px}
+td.h{font-weight:700;text-align:right}
+.sh{display:flex;align-items:center;gap:12px;margin-top:22px}.sh h3{margin:0;font-size:22px;font-weight:600}
+.ic{width:34px;height:34px;border-radius:9px;color:#fff;font-size:19px;display:flex;align-items:center;justify-content:center;flex:none}
+.tx{white-space:pre-wrap;font-size:16px;line-height:1.7;margin:6px 46px 0 0;min-height:30px}
+.sl{font-weight:700;font-size:16px;margin:10px 46px 0 0}
+</style>
+</head>
+<body>
+<div id="app"></div><div id="toast"></div><div id="stage"></div>
+<script src="lib/html2canvas.min.js"></script>
+<script src="lib/jspdf.umd.min.js"></script>
+<script>
+const T=[
+['الإعلامية','السكرتارية الإعلامية','#D66BD8','🎬'],
+['العلاقات الخارجية','العلاقات الخارجية','#1A0DAB','🌐'],
+['الاجتماعية والرياضية','السكرتارية الاجتماعية والرياضية','#BE0A4F','🏆'],
+['المالية','السكرتارية المالية','#008000','💲'],
+['التثقيف الصحي','سكرتارية التثقيف الصحي','#0097B2','🎗️'],
+['العامة','السكرتارية العامة','#B00E14','📅'],
+['الثقافية','السكرتارية الثقافية','#B26A00','🎭'],
+['الأكاديمية','السكرتارية الأكاديمية','#EDB800','📖']
+].map(([s,n,c,e],i)=>({i,s,n,c,e}));
+const H=[['office','المكتب'],['name','اسم المنشط'],['target','الجهة المستهدفة'],['date','التاريخ \\ الزمن']];
+const S=[['desc','وصف المشروع','✎'],['goals','أهداف المشروع','◎'],['deliv','تسليمات أو مخرجات المقترح','☑'],
+['in','داخل نطاق العمل'],['out','خارج نطاق العمل'],['org','هيكل الجسم المنظم','⛶'],
+['mech','آلية العمل (جدولة زمنية ومكانية، خطوات التنفيذ)','⚙'],
+['bud','الميزانية التفصيلية / مصادر التمويل / والجهات الداعمة','﹩'],['fac','المرافق المطلوبة | التصاريح','⌂'],
+['meas','كيفية قياس المقترح','▤'],['by','إعداد/']];
+const $=s=>document.querySelector(s);
+const esc=s=>(s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const load=()=>{try{return JSON.parse(localStorage.getItem('fpsa')||'[]')}catch(e){return[]}};
+const store=a=>localStorage.setItem('fpsa',JSON.stringify(a));
+let cur=null,timer;
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
+
+function home(){
+  cur=null;const docs=load().sort((a,b)=>b.t-a.t);
+  $('#app').innerHTML=`<div class="top"><h1>FPSA Doc</h1></div>
+  <h2>اختر نوع المستند</h2>
+  <div class="grid">${T.map(t=>`<button class="tpl" style="background:${t.c};${t.i==7?'color:#222':''}" onclick="newDoc(${t.i})"><span>${t.e}</span>${t.n}</button>`).join('')}</div>
+  <h2>مستنداتي المحفوظة</h2>
+  ${docs.length?docs.map(d=>{const t=T[d.type];return`<div class="item" style="border-color:${t.c}"><div class="m"><b>${esc(d.data.name)||'بدون اسم'}</b><br><small>${t.n} • ${new Date(d.t).toLocaleDateString('ar')}</small></div><button onclick="openDoc(${d.id})">تعديل</button><button onclick="del(${d.id})">🗑</button></div>`}).join(''):'<div class="empty">لا توجد مستندات محفوظة بعد</div>'}`;
+}
+function newDoc(i){const d={id:Date.now(),type:i,t:Date.now(),data:{office:T[i].s}};const a=load();a.push(d);store(a);openDoc(d.id)}
+function del(id){if(confirm('هل تريد حذف هذا المستند نهائياً؟')){store(load().filter(d=>d.id!=id));home()}}
+function openDoc(id){
+  cur=load().find(d=>d.id==id);const t=T[cur.type];
+  $('#app').innerHTML=`<div class="top" style="background:${t.c};${cur.type==7?'color:#222':''}"><button onclick="home()">رجوع ›</button><h1>${t.n}</h1></div>
+  <div class="form">${H.map(([k,l])=>`<label>${l}</label><input value="${esc(cur.data[k]).replace(/"/g,'&quot;')}" oninput="ch('${k}',this.value)">`).join('')}
+  ${S.map(([k,l])=>`<label>${l}</label><textarea oninput="ch('${k}',this.value)">${esc(cur.data[k])}</textarea>`).join('')}</div>
+  <div class="bar2"><button style="background:#2b2f6b" onclick="exportPdf(false)">📄 تصدير PDF</button><button style="background:#1a7f4b" onclick="exportPdf(true)">✉ إرسال بالبريد</button></div>`;
+}
+function ch(k,v){cur.data[k]=v;clearTimeout(timer);timer=setTimeout(saveCur,400)}
+function saveCur(){const a=load(),i=a.findIndex(d=>d.id==cur.id);cur.t=Date.now();a[i]=cur;store(a)}
+
+function docHTML(d,t){
+  const tc=t.i==7?'#222':'#fff',c=t.c;
+  const sec=(k,l,g)=>`<div class="sh"><span class="ic" style="background:${c};${t.i==7?'color:#222':''}">${g}</span><h3>${l}</h3></div><div class="tx">${esc(d[k])}</div>`;
+  const hd=`style="background:${c};color:${tc}"`;
+  const v=k=>esc(d[k]);
+  return `<div class="page"><div class="bn"><div class="lg">FPSA</div><div class="bt"><small>رابطة طلاب كلية الصيدلة جامعة الخرطوم</small><b style="color:${c}">${t.n}</b></div><div class="bi">${t.e}</div></div>
+  <div class="bar" style="background:linear-gradient(#000,${c})"></div><div class="pad">
+  <table><tr><td class="h" ${hd}>المكتب</td><td class="h" ${hd}>اسم المنشط</td></tr><tr><td>${v('office')}</td><td>${v('name')}</td></tr>
+  <tr><td class="h" ${hd}>الجهة المستهدفة</td><td class="h" ${hd}>التاريخ \\ الزمن</td></tr><tr><td>${v('target')}</td><td>${v('date')}</td></tr></table>
+  ${sec('desc',S[0][1],S[0][2])}${sec('goals',S[1][1],S[1][2])}${sec('deliv',S[2][1],S[2][2])}
+  <div class="sh"><span class="ic" style="background:${c};${t.i==7?'color:#222':''}">⦿</span><h3>داخل / خارج نطاق عمل المقترح والفريق</h3></div>
+  <div class="sl">داخل نطاق العمل</div><div class="tx">${v('in')}</div><div class="sl">خارج نطاق العمل</div><div class="tx">${v('out')}</div>
+  ${sec('org',S[5][1],S[5][2])}${sec('mech',S[6][1],S[6][2])}</div></div>
+  <div class="page"><div class="pad" style="padding-top:40px">
+  ${sec('bud',S[7][1],S[7][2])}${sec('fac',S[8][1],S[8][2])}${sec('meas',S[9][1],S[9][2])}
+  <div class="sl" style="margin-top:40px;font-size:20px">إعداد/ ${v('by')}</div></div></div>`;
+}
+async function exportPdf(mail){
+  if(!cur)return;saveCur();toast('جارٍ إنشاء ملف PDF...');
+  try{
+    const t=T[cur.type],st=$('#stage');st.innerHTML=docHTML(cur.data,t);
+    const pdf=new window.jspdf.jsPDF({unit:'pt',format:'a4'});const W=595.28,Hh=841.89;let first=true;
+    for(const p of st.querySelectorAll('.page')){
+      const c=await html2canvas(p,{scale:2,backgroundColor:'#fff'});const ph=Math.floor(c.width*Hh/W);
+      for(let y=0;y<c.height;y+=ph){
+        const s=document.createElement('canvas');s.width=c.width;s.height=Math.min(ph,c.height-y);
+        const x=s.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,s.width,s.height);x.drawImage(c,0,y,c.width,s.height,0,0,c.width,s.height);
+        if(!first)pdf.addPage();first=false;pdf.addImage(s.toDataURL('image/jpeg',.92),'JPEG',0,0,W,s.height*W/c.width);
+      }
+    }
+    st.innerHTML='';
+    const fn='FPSA_'+t.s.replace(/\s/g,'_')+'_'+cur.id+'.pdf';
+    const C=window.Capacitor,P=C&&C.Plugins;
+    if(C&&C.isNativePlatform&&C.isNativePlatform()&&P.Filesystem&&P.Share){
+      const b64=pdf.output('datauristring').split(',')[1];
+      const r=await P.Filesystem.writeFile({path:fn,data:b64,directory:'CACHE'});
+      await P.Share.share({title:'FPSA - '+(cur.data.name||t.n),text:mail?'مرفق مستند: '+(cur.data.name||t.n):'',url:r.uri,dialogTitle:mail?'اختر تطبيق البريد':'حفظ / مشاركة PDF'});
+    }else pdf.save(fn);
+  }catch(e){if(!/cancel/i.test(e.message||''))toast('تعذر إنشاء الملف: '+(e.message||e))}
+}
+home();
+</script>
+</body>
+</html>

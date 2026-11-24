@@ -1,0 +1,3 @@
+{"name":"fpsa-doc","version":"1.0.0","private":true,
+"scripts":{"prep":"node prep.js","android":"node prep.js && npx cap add android && npx cap sync android"},
+"dependencies":{"@capacitor/android":"^6.0.0","@capacitor/cli":"^6.0.0","@capacitor/core":"^6.0.0","@capacitor/filesystem":"^6.0.0","@capacitor/share":"^6.0.0","html2canvas":"^1.4.1","jspdf":"^2.5.1"}}
